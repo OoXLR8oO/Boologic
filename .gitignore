@@ -10,7 +10,8 @@ wheels/
 .venv
 
 # Folders
-tests
+tests/
+decorators/
 
 # Files
 main.py

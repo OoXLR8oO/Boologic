@@ -6,14 +6,15 @@ Explicitly via classes (e.g. Implies(A, B))
 Implicitly via operators (e.g. A >> B)
 
 Both approaches will represent expressions with proper symbols (¬, ∧, ∨, →, ↔)
-when printed.
+when printed. It is possible to use a mix of both approaches without the
+code breaking (e.g. Implies(A & B)).
 
 These are the operators used:
 NOT (~)
 AND (&)
 OR (|)
 IMPLIES (>>)
-BICONDITIONAL (^)
+BICONDITIONAL (**)
 
 NOTE: 
 When using the above operators, Python's operator precedence does 

@@ -8,7 +8,7 @@ def to_cnf(expr: Expr) -> Expr:
     while True:
         new = _distribute(expr)
         if new == expr:
-            return cnf_to_str(expr)
+            return flatten_cnf(expr)
         expr = new
 
 
@@ -107,19 +107,27 @@ def pretty_print_cnf(expr: Expr, indent: int = 0) -> str:
     return str(expr)
 
 
-def cnf_to_str(expr: Expr) -> str:
-    """Return CNF expression as a single-line string with clauses joined by ∧."""
-    if isinstance(expr, And):
-        # recursively flatten ANDs into a list
-        clauses = []
+def flatten_cnf(expr: Expr) -> str:
+    """
+    Convert a CNF Expr tree into a single-line string where
+    clauses are joined by ∧ and OR clauses are flattened.
+    """
 
-        def collect(e):
-            if isinstance(e, And):
-                collect(e.left)
-                collect(e.right)
-            else:
-                clauses.append(str(e))
+    def flatten_or(e: Expr):
+        if isinstance(e, Or):
+            return flatten_or(e.left) + flatten_or(e.right)
+        return [str(e)]
 
-        collect(expr)
-        return " ∧ ".join(clauses)
-    return str(expr)
+    clauses = []
+
+    def collect(e: Expr):
+        if isinstance(e, And):
+            collect(e.left)
+            collect(e.right)
+        else:
+            terms = flatten_or(e)
+            clauses.append("(" + " ∨ ".join(terms) + ")")
+
+    collect(expr)
+
+    return " ∧ ".join(clauses)
