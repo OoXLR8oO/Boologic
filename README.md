@@ -5,7 +5,7 @@ There are two main ways to use this library:
 Explicitly via classes (e.g. Implies(A, B))
 Implicitly via operators (e.g. A >> B)
 
-Both approaches represent expressions with proper symbols (¬, ∧, ∨, →, ↔)
+Both approaches will represent expressions with proper symbols (¬, ∧, ∨, →, ↔)
 when printed.
 
 These are the operators used:

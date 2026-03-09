@@ -1,7 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "pylogix"
+name = "boologic"
 version = "0.1.0"
-description = "Add your description here"
+description = "This is a basic library for implementing boolean propositional logic."
 readme = "README.md"
 requires-python = ">=3.14"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
 dependencies = []
+
+authors = [
+  { name = "Kartik Punna", email = "kartikpunna@gmail.com" },
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "License :: OSI Approved :: MIT License",
+]
+
+[project.urls]
+Homepage = "https://github.com/OoXLR8oO/boologic"
+Issues = "https://github.com/OoXLR8oO/boologic/issues"
+Repository = "https://github.com/OoXLR8oO/boologic"
+
+[tool.hatch.build.targets.wheel]
+packages = ["boologic"]
+
