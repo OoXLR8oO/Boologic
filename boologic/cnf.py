@@ -8,7 +8,7 @@ def to_cnf(expr: Expr) -> Expr:
     while True:
         new = _distribute(expr)
         if new == expr:
-            return flatten_cnf(expr)
+            return expr
         expr = new
 
 
@@ -126,7 +126,10 @@ def flatten_cnf(expr: Expr) -> str:
             collect(e.right)
         else:
             terms = flatten_or(e)
-            clauses.append("(" + " ∨ ".join(terms) + ")")
+            if len(terms) == 1:
+                clauses.append(terms[0])
+            else:
+                clauses.append("(" + " ∨ ".join(terms) + ")")
 
     collect(expr)
 
