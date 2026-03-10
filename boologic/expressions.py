@@ -66,6 +66,24 @@ class Var(Expr):
     @property
     def precedence(self):
         return Precedence.VAR
+
+
+@dataclass(frozen=True)
+class Const(Expr):
+    value: bool
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
+        return self.value
+
+    def variables(self) -> set[str]:
+        return set()
+
+    @property
+    def precedence(self):
+        return Precedence.VAR
     
 
 @dataclass(frozen=True)

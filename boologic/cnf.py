@@ -1,8 +1,10 @@
-from .expressions import Biconditional, Expr, Implies, Var, Not, And, Or
+from .expressions import Biconditional, Expr, Implies, Var, Not, And, Or, Const
 
 
 def to_cnf(expr: Expr) -> Expr:
     """Convert any Expr into conjunctive normal form (CNF)."""
+    if isinstance(expr, Const):
+        return expr
     expr = _eliminate_implications(expr)
     expr = _push_negations(expr)
     while True:
@@ -14,7 +16,7 @@ def to_cnf(expr: Expr) -> Expr:
 
 def _eliminate_implications(expr: Expr) -> Expr:
     """Replace implications and biconditionals with equivalent expressions."""
-    if isinstance(expr, Var):
+    if isinstance(expr, (Var, Const)):
         return expr
     if isinstance(expr, Not):
         return Not(_eliminate_implications(expr.operand))
@@ -42,6 +44,8 @@ def _push_negations(expr: Expr) -> Expr:
         return expr
     if isinstance(expr, Not):
         inner = expr.operand
+        if isinstance(inner, Const):
+            return Const(not inner.value)
         if isinstance(inner, Var):
             return expr
         if isinstance(inner, Not):
@@ -64,18 +68,33 @@ def _push_negations(expr: Expr) -> Expr:
 
 
 def _distribute(expr: Expr) -> Expr:
-    """Distribute OR over AND to get CNF."""
     if isinstance(expr, Or):
-        if isinstance(expr.left, And):
-            return And(_distribute(Or(expr.left.left, expr.right)),
-                       _distribute(Or(expr.left.right, expr.right)))
-        if isinstance(expr.right, And):
-            return And(_distribute(Or(expr.left, expr.right.left)),
-                       _distribute(Or(expr.left, expr.right.right)))
-        return Or(_distribute(expr.left), _distribute(expr.right))
+        left = _distribute(expr.left)
+        right = _distribute(expr.right)
+
+        # constant rules
+        if isinstance(left, Const):
+            return Const(True) if left.value else right
+        if isinstance(right, Const):
+            return Const(True) if right.value else left
+        if isinstance(left, And):
+            return And(_distribute(Or(left.left, right)),
+                       _distribute(Or(left.right, right)))
+        if isinstance(right, And):
+            return And(_distribute(Or(left, right.left)),
+                       _distribute(Or(left, right.right)))
+        return Or(left, right)
+
     if isinstance(expr, And):
-        return And(_distribute(expr.left), _distribute(expr.right))
-    return expr  # Var or Not
+        left = _distribute(expr.left)
+        right = _distribute(expr.right)
+        # constant rules
+        if isinstance(left, Const):
+            return right if left.value else Const(False)
+        if isinstance(right, Const):
+            return left if right.value else Const(False)
+        return And(left, right)
+    return expr
 
 
 def pretty_print_cnf(expr: Expr, indent: int = 0) -> str:
@@ -116,6 +135,8 @@ def flatten_cnf(expr: Expr) -> str:
     def flatten_or(e: Expr):
         if isinstance(e, Or):
             return flatten_or(e.left) + flatten_or(e.right)
+        if isinstance(e, Const):
+            return [str(True) if e.value else str(False)]
         return [str(e)]
 
     clauses = []
