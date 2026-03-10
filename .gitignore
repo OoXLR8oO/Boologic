@@ -12,6 +12,7 @@ wheels/
 # Folders
 tests/
 decorators/
+dev/
 
 # Files
 main.py

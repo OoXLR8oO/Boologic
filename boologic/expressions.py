@@ -49,6 +49,9 @@ class Expr(ABC):
 class Var(Expr):
     name: str
 
+    def __repr__(self) -> str:
+        return self.name
+
     def __str__(self) -> str:
         return self.name
 
@@ -64,13 +67,16 @@ class Var(Expr):
         return self
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.VAR
 
 
 @dataclass(frozen=True)
 class Const(Expr):
     value: bool
+
+    def __repr__(self) -> str:
+        return f"Const({self.value})"
 
     def __str__(self) -> str:
         return str(self.value)
@@ -82,13 +88,16 @@ class Const(Expr):
         return set()
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.VAR
     
 
 @dataclass(frozen=True)
 class Not(Expr):
     operand: Expr
+
+    def __repr__(self) -> str:
+        return f"Not({self.operand!r})"
 
     def __str__(self) -> str:
         return f"¬{self.operand}"
@@ -106,7 +115,7 @@ class Not(Expr):
         return Not(inner)
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.NOT
 
 
@@ -114,6 +123,9 @@ class Not(Expr):
 class And(Expr):
     left: Expr
     right: Expr
+
+    def __repr__(self) -> str:
+        return f"And({self.left}, {self.right})"
 
     def __str__(self) -> str:
         return f"({self.left} ∧ {self.right})"
@@ -130,7 +142,7 @@ class And(Expr):
         return l if l == r else And(l, r)
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.AND
 
 
@@ -138,6 +150,9 @@ class And(Expr):
 class Or(Expr):
     left: Expr
     right: Expr
+
+    def __repr__(self) -> str:
+        return f"Or({self.left}, {self.right})"
 
     def __str__(self) -> str:
         return f"({self.left} ∨ {self.right})"
@@ -154,7 +169,7 @@ class Or(Expr):
         return l if l == r else Or(l, r)
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.OR
 
 
@@ -162,6 +177,9 @@ class Or(Expr):
 class Implies(Expr):
     left: Expr
     right: Expr
+
+    def __repr__(self) -> str:
+        return f"Implies({self.left}, {self.right})"
 
     def __str__(self) -> str:
         return f"({self.left} → {self.right})"
@@ -176,7 +194,7 @@ class Implies(Expr):
         return Or(Not(self.left), self.right).simplify()
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.IMPLIES
 
 
@@ -184,6 +202,9 @@ class Implies(Expr):
 class Biconditional(Expr):
     left: Expr
     right: Expr
+
+    def __repr__(self) -> str:
+        return f"Biconditional({self.left}, {self.right})"
 
     def __str__(self) -> str:
         return f"({self.left} ↔ {self.right})"
@@ -198,5 +219,5 @@ class Biconditional(Expr):
         return And(Implies(self.left, self.right), Implies(self.right, self.left)).simplify()
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.BICONDITIONAL
