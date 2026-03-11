@@ -118,41 +118,61 @@ def distribute_or(expr: Expr) -> Expr:
 
 
 def simplify(expr: Expr) -> Expr:
+    """Simplify CNF expressions, handling constants automatically."""    
+    # Simplify AND nodes
     if isinstance(expr, And):
-        parts = [simplify(p) for p in flatten(expr, And)]
-        if any(p == Const(False) for p in parts):
-            return Const(False)
-        parts = [p for p in parts if p != Const(True)]
+        parts = [simplify(p) for p in flatten(expr, And)]       
+        # AND with False is always False
+        if any(isinstance(p, Const) and not p.value for p in parts):
+            return Const(False)       
+        # Remove True constants
+        parts = [p for p in parts if not (isinstance(p, Const) and p.value)]  
         if not parts:
-            return Const(True)
+            return Const(True) 
         result = parts[0]
         for p in parts[1:]:
             result = And(result, p)
         return result
-
+    
+    # Simplify OR nodes
     if isinstance(expr, Or):
-        parts = flatten(expr, Or)
+        parts = [simplify(p) for p in flatten(expr, Or)]
         seen = set()
         neg = set()
         cleaned = []
         for p in parts:
-            if isinstance(p, Not) and p.operand in seen:
-                return Const(True)
-            if p in neg:
-                return Const(True)
+            if isinstance(p, Const):
+                if p.value:
+                    return Const(True)  # OR with True is always True
+                continue  # OR with False does nothing
             if isinstance(p, Not):
+                if p.operand in seen:
+                    return Const(True)  # x ∨ ¬x == True
                 neg.add(p.operand)
             else:
+                if p in neg:
+                    return Const(True)  # x ∨ ¬x == True
                 seen.add(p)
             if p not in cleaned:
-                cleaned.append(p)
+                cleaned.append(p) 
         if not cleaned:
             return Const(False)
+        
         result = cleaned[0]
         for p in cleaned[1:]:
             result = Or(result, p)
         return result
-    return expr
+    
+    # Not or Var or Const nodes
+    if isinstance(expr, Not):
+        inner = simplify(expr.operand)
+        if isinstance(inner, Const):
+            return Const(not inner.value)
+        if isinstance(inner, Not):
+            return simplify(inner.operand)  # ¬¬A -> A
+        return Not(inner)
+
+    return expr  # Var or Const
 
 
 def reduce_cnf(expr: Expr) -> Expr:
