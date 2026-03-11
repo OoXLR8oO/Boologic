@@ -12,7 +12,162 @@ def to_cnf(expr: Expr) -> Expr:
         if new == expr:
             break
         expr = new
-    return _simplify_cnf(expr)
+    return expr
+
+
+def reduce_cnf(expr: Expr) -> Expr:
+    """
+    Reduce a CNF expression by simplifying clauses, applying unit propagation,
+    and removing subsumed clauses.
+
+    This assumes the input is already in CNF; for arbitrary expressions do:
+    `reduce_cnf(to_cnf(expr))`.
+    """
+    return _reduce_cnf(expr)
+
+
+def _reduce_cnf(expr: Expr) -> Expr:
+    simplified = _simplify_cnf(expr)
+
+    if isinstance(simplified, (Const, Var, Not)):
+        return simplified
+
+    def negate_lit(lit: Expr) -> Expr:
+        if isinstance(lit, Not):
+            return lit.operand
+        return Not(lit)
+
+    def clause_to_expr(clause: frozenset[Expr]) -> Expr:
+        lits = sorted(
+            clause,
+            key=lambda l: (lit_pos.get(l, 10**9), str(l))
+        )
+        out: Expr = lits[0]
+        for lit in lits[1:]:
+            out = Or(out, lit)
+        return out
+
+    lit_pos: dict[Expr, int] = {}
+    clause_pos: dict[frozenset[Expr], int] = {}
+    _pos = 0
+
+    def note_lit(l: Expr) -> None:
+        nonlocal _pos
+        if l not in lit_pos:
+            lit_pos[l] = _pos
+            _pos += 1
+
+    def note_clause(c: frozenset[Expr], first_pos: int) -> None:
+        if c not in clause_pos:
+            clause_pos[c] = first_pos
+
+    def clause_key(clause: frozenset[Expr]) -> tuple[int, tuple[int, ...], tuple[str, ...]]:
+        cpos = clause_pos.get(clause, 10**9)
+        lpos = tuple(sorted(lit_pos.get(l, 10**9) for l in clause))
+        s = tuple(str(l) for l in clause)
+        return (cpos, lpos, s)
+
+    clauses: set[frozenset[Expr]] = set()
+    for part in _flatten_and(simplified):
+        if isinstance(part, Const):
+            if not part.value:
+                return Const(False)
+            continue
+
+        if isinstance(part, Or):
+            part = _simplify_cnf(part)
+
+        if isinstance(part, Const):
+            if part.value:
+                continue
+            return Const(False)
+
+        lits_in_order = _flatten_or(part)
+        litset = frozenset(lits_in_order)
+        if not litset:
+            return Const(False)
+
+        if any(negate_lit(l) in litset for l in litset):
+            continue
+
+        first_clause_pos = 10**9
+        for l in lits_in_order:
+            note_lit(l)
+            first_clause_pos = min(first_clause_pos, lit_pos[l])
+        note_clause(litset, first_clause_pos)
+        clauses.add(litset)
+
+    if not clauses:
+        return Const(True)
+
+    clauses_list = sorted(clauses, key=clause_key)
+    units: set[Expr] = set()
+    while True:
+        unit: Expr | None = None
+        for c in clauses_list:
+            if len(c) == 1:
+                (only,) = tuple(c)
+                if isinstance(only, Const):
+                    if only.value:
+                        continue
+                    return Const(False)
+                unit = only
+                break
+
+        if unit is None:
+            break
+
+        if unit in units:
+            clauses_list = [c for c in clauses_list if not (len(c) == 1 and unit in c)]
+            continue
+
+        if negate_lit(unit) in units:
+            return Const(False)
+
+        units.add(unit)
+        neg_unit = negate_lit(unit)
+
+        new_clauses: set[frozenset[Expr]] = set()
+        for c in clauses_list:
+            if unit in c:
+                continue
+            if neg_unit in c:
+                reduced = frozenset(l for l in c if l != neg_unit)
+                if not reduced:
+                    return Const(False)
+                # new clause order: as early as any of its literals
+                if reduced not in clause_pos:
+                    clause_pos[reduced] = min(lit_pos.get(l, 10**9) for l in reduced)
+                new_clauses.add(reduced)
+            else:
+                new_clauses.add(c)
+
+        clauses_list = sorted(new_clauses, key=clause_key)
+
+    for u in units:
+        note_lit(u)
+        uc = frozenset({u})
+        note_clause(uc, lit_pos.get(u, 10**9))
+        clauses_list.append(uc)
+    clauses_list = sorted(set(clauses_list), key=clause_key)
+
+    kept: list[frozenset[Expr]] = []
+    for c in clauses_list:
+        if any(k.issubset(c) for k in kept):
+            continue
+        kept = [k for k in kept if not c.issubset(k)]
+        kept.append(c)
+    kept = sorted(kept, key=clause_key)
+
+    if not kept:
+        return Const(True)
+    if len(kept) == 1:
+        return clause_to_expr(kept[0])
+
+    conj: Expr = clause_to_expr(kept[0])
+    for c in kept[1:]:
+        conj = And(conj, clause_to_expr(c))
+    return conj
 
 
 def _eliminate_implications(expr: Expr) -> Expr:
@@ -31,11 +186,11 @@ def _eliminate_implications(expr: Expr) -> Expr:
     if isinstance(expr, Implies):
         return Or(Not(_eliminate_implications(expr.left)),
                   _eliminate_implications(expr.right))
-    # Biconditional: A ↔ B = (A → B) ∧ (B → A)
+    # Biconditional: A ↔ B = (¬A ∨ B) ∧ (A ∨ ¬B)
     if isinstance(expr, Biconditional):
         A = _eliminate_implications(expr.left)
         B = _eliminate_implications(expr.right)
-        return And(Or(Not(A), B), Or(Not(B), A))
+        return And(Or(Not(A), B), Or(A, Not(B)))
     return expr
 
 
@@ -159,11 +314,25 @@ def _simplify_cnf(expr: Expr) -> Expr:
             parts = [simplify(p) for p in _flatten_and(node)]
 
             new_parts: list[Expr] = []
+            pos_vars: set[Var] = set()
+            neg_vars: set[Var] = set()
+
             for p in parts:
                 if isinstance(p, Const):
                     if not p.value:
                         return Const(False)
                     continue
+
+                if isinstance(p, Var):
+                    if p in neg_vars:
+                        return Const(False)
+                    pos_vars.add(p)
+                elif isinstance(p, Not) and isinstance(p.operand, Var):
+                    v = p.operand
+                    if v in pos_vars:
+                        return Const(False)
+                    neg_vars.add(v)
+
                 if p not in new_parts:
                     new_parts.append(p)
 
@@ -182,91 +351,7 @@ def _simplify_cnf(expr: Expr) -> Expr:
 
         return node
 
-    simplified = simplify(expr)
-
-    if isinstance(simplified, (Const, Var, Not)):
-        return simplified
-
-    def negate_lit(lit: Expr) -> Expr:
-        if isinstance(lit, Not):
-            return lit.operand
-        return Not(lit)
-
-    clauses: list[set[Expr]] = []
-    for part in _flatten_and(simplified):
-        if isinstance(part, Const):
-            if not part.value:
-                return Const(False)
-            continue
-        lits = set(_flatten_or(part))
-        if not lits:
-            return Const(False)
-        drop_clause = False
-        lit_set = set()
-        for lit in lits:
-            neg = negate_lit(lit)
-            if neg in lits:
-                drop_clause = True
-                break
-            lit_set.add(lit)
-        if drop_clause:
-            continue
-        clauses.append(lit_set)
-
-    if not clauses:
-        return Const(True)
-
-    while True:
-        unit_lit: Expr | None = None
-        for c in clauses:
-            if len(c) == 1:
-                (only,) = tuple(c)
-                if isinstance(only, Const):
-                    if only.value:
-                        continue
-                    return Const(False)
-                unit_lit = only
-                break
-
-        if unit_lit is None:
-            break
-
-        new_clauses: list[set[Expr]] = []
-        neg_unit = negate_lit(unit_lit)
-        for c in clauses:
-            if unit_lit in c:
-                continue
-            if neg_unit in c:
-                new_c = {l for l in c if l != neg_unit}
-                if not new_c:
-                    return Const(False)
-                new_clauses.append(new_c)
-            else:
-                new_clauses.append(c)
-        clauses = new_clauses
-        if not clauses:
-            return Const(True)
-
-    def clause_to_expr(clause: set[Expr]) -> Expr:
-        lits = sorted(clause, key=str)
-        e = lits[0]
-        for lit in lits[1:]:
-            e = Or(e, lit)
-        return e
-
-    # deterministically order the list of clauses as well
-    ordered_clauses = sorted(
-        clauses,
-        key=lambda c: tuple(sorted((str(l) for l in c)))
-    )
-
-    if len(ordered_clauses) == 1:
-        return clause_to_expr(ordered_clauses[0])
-
-    conj: Expr = clause_to_expr(ordered_clauses[0])
-    for clause in ordered_clauses[1:]:
-        conj = And(conj, clause_to_expr(clause))
-    return conj
+    return simplify(expr)
 
 
 def pretty_print_cnf(expr: Expr, indent: int = 0) -> str:
@@ -299,7 +384,6 @@ def flatten_cnf(expr: Expr) -> str:
     Convert a CNF Expr tree into a single-line string where
     clauses are joined by ∧ and OR clauses are flattened.
     """
-
     clauses = []
 
     def collect(e: Expr):
