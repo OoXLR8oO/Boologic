@@ -4,13 +4,16 @@ build-backend = "hatchling.build"
 
 [project]
 name = "boologic"
-version = "0.2.1"
+version = "0.3.0"
 description = "This is a basic library for implementing boolean propositional logic."
 readme = "README.md"
 requires-python = ">=3.14"
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
-dependencies = []
+dependencies = [
+    "ruff>=0.15.5",
+    "tool>=0.8.0",
+]
 
 authors = [
   { name = "Kartik Punna", email = "kartikpunna@gmail.com" },

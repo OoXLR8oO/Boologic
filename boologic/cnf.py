@@ -253,6 +253,10 @@ def reduce_cnf(expr: Expr) -> Expr:
 
 def expr_to_clauses(expr: Expr) -> list[list[Expr]]:
     """Convert CNF expression tree to clause list."""
+    if isinstance(expr, Const):
+        if expr.value:
+            return []
+        return [[]]
     clauses = []
     for part in flatten(expr, And):
         clauses.append(flatten(part, Or))
