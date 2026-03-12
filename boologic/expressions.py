@@ -29,6 +29,11 @@ class Expr(ABC):
                 return expr
             expr = new
 
+    def format(self, child: Expr) -> str:
+        if child.precedence < self.precedence:
+            return f"({child})"
+        return str(child)
+
     def __invert__(self) -> Expr:
         return Not(self)
 
@@ -100,7 +105,7 @@ class Not(Expr):
         return f"Not({self.operand!r})"
 
     def __str__(self) -> str:
-        return f"¬{self.operand}"
+        return f"¬{self.format(self.operand)}"
 
     def evaluate(self, assignment: Mapping[str, bool]) -> bool:
         return not self.operand.evaluate(assignment)
@@ -128,7 +133,7 @@ class And(Expr):
         return f"And({self.left}, {self.right})"
 
     def __str__(self) -> str:
-        return f"({self.left} ∧ {self.right})"
+        return f"{self.format(self.left)} ∧ {self.format(self.right)}"
 
     def evaluate(self, assignment: Mapping[str, bool]) -> bool:
         return self.left.evaluate(assignment) and self.right.evaluate(assignment)
@@ -155,7 +160,7 @@ class Or(Expr):
         return f"Or({self.left}, {self.right})"
 
     def __str__(self) -> str:
-        return f"({self.left} ∨ {self.right})"
+        return f"{self.format(self.left)} ∨ {self.format(self.right)}"
 
     def evaluate(self, assignment: Mapping[str, bool]) -> bool:
         return self.left.evaluate(assignment) or self.right.evaluate(assignment)
@@ -182,7 +187,7 @@ class Implies(Expr):
         return f"Implies({self.left}, {self.right})"
 
     def __str__(self) -> str:
-        return f"({self.left} → {self.right})"
+        return f"{self.format(self.left)} → {self.format(self.right)}"
 
     def evaluate(self, assignment: Mapping[str, bool]) -> bool:
         return (not self.left.evaluate(assignment)) or self.right.evaluate(assignment)
@@ -207,7 +212,7 @@ class Biconditional(Expr):
         return f"Biconditional({self.left}, {self.right})"
 
     def __str__(self) -> str:
-        return f"({self.left} ↔ {self.right})"
+        return f"{self.format(self.left)} ↔ {self.format(self.right)}"
 
     def evaluate(self, assignment: Mapping[str, bool]) -> bool:
         return self.left.evaluate(assignment) == self.right.evaluate(assignment)

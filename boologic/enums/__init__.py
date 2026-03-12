@@ -1,9 +1,9 @@
 from enum import IntEnum
 
 class Precedence(IntEnum):
-    BICONDITIONAL = 1
-    IMPLIES = 2
-    OR = 3
-    AND = 4
-    NOT = 5
     VAR = 6
+    NOT = 5
+    AND = 4
+    OR = 3
+    IMPLIES = 2
+    BICONDITIONAL = 1
