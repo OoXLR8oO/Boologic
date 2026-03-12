@@ -122,11 +122,9 @@ def distribute_or(expr: Expr) -> Expr:
 
 def simplify(expr: Expr) -> Expr:
     """Simplify CNF expressions, handling constants automatically."""    
-
     # Simplify AND nodes
     if isinstance(expr, And):
         parts = [simplify(p) for p in flatten(expr, And)]
-
         seen = set()
         neg = set()
         cleaned = []
@@ -139,11 +137,11 @@ def simplify(expr: Expr) -> Expr:
 
             if isinstance(p, Not):
                 if p.operand in seen:
-                    return Const(False)  # x ∧ ¬x == False
+                    return Const(False)
                 neg.add(p.operand)
             else:
                 if p in neg:
-                    return Const(False)  # x ∧ ¬x == False
+                    return Const(False)
                 seen.add(p)
 
             if p not in cleaned:
@@ -172,11 +170,11 @@ def simplify(expr: Expr) -> Expr:
 
             if isinstance(p, Not):
                 if p.operand in seen:
-                    return Const(True)  # x ∨ ¬x == True
+                    return Const(True)
                 neg.add(p.operand)
             else:
                 if p in neg:
-                    return Const(True)  # x ∨ ¬x == True
+                    return Const(True)
                 seen.add(p)
 
             if p not in cleaned:
@@ -198,7 +196,6 @@ def simplify(expr: Expr) -> Expr:
         if isinstance(inner, Not):
             return simplify(inner.operand)  # ¬¬A -> A
         return Not(inner)
-
     return expr  # Var or Const
 
 

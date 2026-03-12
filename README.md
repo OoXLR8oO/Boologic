@@ -14,7 +14,7 @@ NOT (~)
 AND (&)
 OR (|)
 IMPLIES (>>)
-BICONDITIONAL (**)
+BICONDITIONAL (^)
 
 NOTE: 
 When using the above operators, Python's operator precedence does 

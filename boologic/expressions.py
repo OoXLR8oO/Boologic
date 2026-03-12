@@ -46,7 +46,7 @@ class Expr(ABC):
     def __rshift__(self, other: Expr) -> Expr:
         return Implies(self, other)
 
-    def __pow__(self, other: Expr) -> Expr:
+    def __xor__(self, other: Expr) -> Expr:
         return Biconditional(self, other)
 
 
