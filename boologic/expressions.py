@@ -142,9 +142,9 @@ class And(Expr):
         return self.left.variables() | self.right.variables()
 
     def simplify(self) -> Expr:
-        l = self.left.simplify()
-        r = self.right.simplify()
-        return l if l == r else And(l, r)
+        left = self.left.simplify()
+        right = self.right.simplify()
+        return left if left == right else And(left, right)
 
     @property
     def precedence(self) -> Precedence:
@@ -169,9 +169,9 @@ class Or(Expr):
         return self.left.variables() | self.right.variables()
 
     def simplify(self) -> Expr:
-        l = self.left.simplify()
-        r = self.right.simplify()
-        return l if l == r else Or(l, r)
+        left = self.left.simplify()
+        right = self.right.simplify()
+        return left if left == right else Or(left, right)
 
     @property
     def precedence(self) -> Precedence:
