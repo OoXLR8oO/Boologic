@@ -1,15 +1,15 @@
-from boologic.expressions import Not
+from boologic.expressions import Not, Expr
 
 
-def literal_var(lit):
+def literal_var(lit) -> Expr:
     return lit.operand if isinstance(lit, Not) else lit
 
 
-def literal_value(lit):
+def literal_value(lit) -> bool:
     return False if isinstance(lit, Not) else True
 
 
-def simplify_clauses(clauses, var_name, value):
+def simplify_clauses(clauses, var_name, value) -> list[list[Expr]]:
     new_clauses = []
 
     for clause in clauses:
@@ -28,11 +28,11 @@ def simplify_clauses(clauses, var_name, value):
     return new_clauses
 
 
-def find_unit_clause(clauses):
+def find_unit_clause(clauses) -> Expr:
     return next((c[0] for c in clauses if len(c) == 1), None)
 
 
-def find_pure_literal(clauses):
+def find_pure_literal(clauses) -> Expr | None:
     polarity = {}
     for clause in clauses:
         for lit in clause:
@@ -45,7 +45,7 @@ def find_pure_literal(clauses):
     return None
 
 
-def choose_variable(clauses):
+def choose_variable(clauses) -> Expr | None:
     for clause in clauses:
         for lit in clause:
             return literal_var(lit).name

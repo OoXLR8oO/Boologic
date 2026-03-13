@@ -268,7 +268,7 @@ def clauses_to_expr(clauses: list[list[Expr]]) -> Expr:
     if not clauses:
         return Const(True)
 
-    def build_clause(clause):
+    def build_clause(clause) -> Expr:
         result = clause[0]
         for lit in clause[1:]:
             result = Or(result, lit)

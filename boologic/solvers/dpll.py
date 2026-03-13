@@ -1,12 +1,22 @@
-from boologic.expressions import And
+from boologic.expressions import And, Expr, Not
 from boologic.cnf import to_cnf, reduce_cnf, expr_to_clauses
-from . import *
+from . import (
+    literal_var, 
+    literal_value, 
+    find_unit_clause, 
+    simplify_clauses, 
+    find_pure_literal, 
+    choose_variable
+    )
 
 
-def dpll(clauses, assignment, all_vars=None):
+def dpll(clauses: list[list[Expr]], assignment: dict[str, bool], all_vars: set[str] | None = None) -> dict[str, bool] | bool:
     """
-    DPLL algorithm with complete variable assignment.
-    all_vars: optional set of all variable names to assign defaults for free vars
+    DPLL SAT solver.
+
+    clauses: CNF clause list
+    assignment: partial variable assignment
+    all_vars: full set of variables in the problem
     """
     if all_vars is None:
         # Collect all variables from clauses
@@ -51,7 +61,7 @@ def dpll(clauses, assignment, all_vars=None):
     return False
 
 
-def solve(expr):
+def solve(expr: Expr) -> dict[str, bool] | bool:
     """Full SAT pipeline: CNF conversion, reduction, and DPLL."""
     cnf = to_cnf(expr)
     reduced = reduce_cnf(cnf)
@@ -59,23 +69,23 @@ def solve(expr):
     return dpll(clauses, {}, {literal_var(lit).name for clause in clauses for lit in clause})
 
 
-def model(expr):
+def model(expr: Expr) -> dict[str, bool] | None:
     """Return a model if satisfiable, None otherwise."""
     result = solve(expr)
     return result if result else None
 
 
-def is_satisfiable(expr):
+def is_satisfiable(expr: Expr) -> bool:
     return solve(expr) is not False
 
 
-def is_tautology(expr):
+def is_tautology(expr: Expr) -> bool:
     return solve(Not(expr)) is False
 
 
-def is_contradiction(expr):
+def is_contradiction(expr: Expr) -> bool:
     return solve(expr) is False
 
 
-def entails(kb, query):
+def entails(kb: Expr, query: Expr) -> bool:
     return solve(And(kb, Not(query))) is False
