@@ -21,14 +21,6 @@ class Expr(ABC):
     def simplify(self) -> Expr:
         return self
 
-    def fully_simplify(self) -> Expr:
-        expr: Expr = self
-        while True:
-            new = expr.simplify()
-            if new == expr:
-                return expr
-            expr = new
-
     def format(self, child: Expr) -> str:
         if child.precedence < self.precedence:
             return f"({child})"
