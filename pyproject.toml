@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "boologic"
-version = "0.3.0"
+version = "0.3.1"
 description = "This is a basic library for implementing boolean propositional logic."
 readme = "README.md"
 requires-python = ">=3.14"
