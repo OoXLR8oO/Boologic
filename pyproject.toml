@@ -11,6 +11,7 @@ requires-python = ">=3.14"
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
+    "pydantic>=2.13.4",
     "ruff>=0.15.5",
     "tool>=0.8.0",
 ]

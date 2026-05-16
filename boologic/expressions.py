@@ -1,31 +1,32 @@
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
+
+from pydantic.dataclasses import dataclass
+from pydantic import ConfigDict
+
 from .enums import Precedence
 
 
 class Expr(ABC):
     @abstractmethod
-    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
-        ...
+    def evaluate(self, assignment: Mapping[str, bool]) -> bool: ...
 
     @abstractmethod
-    def variables(self) -> set[str]:
+    def variables(self) -> set[str]: 
         ...
 
     @property
     @abstractmethod
-    def precedence(self) -> Precedence:
+    def precedence(self) -> Precedence: 
         ...
 
     def simplify(self) -> Expr:
         return self
 
     def format(self, child: Expr) -> str:
-        if child.precedence < self.precedence:
-            return f"({child})"
-        return str(child)
+        return f"({child})" if child.precedence < self.precedence else str(child)
 
+    # operators
     def __invert__(self) -> Expr:
         return Not(self)
 
@@ -42,179 +43,157 @@ class Expr(ABC):
         return Biconditional(self, other)
 
 
+@dataclass(frozen=True, config=ConfigDict(arbitrary_types_allowed=True))
+class UnaryExpr(Expr):
+    operand: Expr
+
+
+@dataclass(frozen=True, config=ConfigDict(arbitrary_types_allowed=True))
+class BinaryExpr(Expr):
+    left: Expr
+    right: Expr
+
+
 @dataclass(frozen=True)
 class Var(Expr):
     name: str
 
-    def __repr__(self) -> str:
-        return self.name
-
-    def __str__(self) -> str:
-        return self.name
-
-    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
-        if self.name not in assignment:
-            raise ValueError(f"Variable {self.name} not in assignment")
+    def evaluate(self, assignment):
         return assignment[self.name]
 
-    def variables(self) -> set[str]:
+    def variables(self):
         return {self.name}
 
-    def simplify(self) -> Expr:
-        return self
-
     @property
-    def precedence(self) -> Precedence:
+    def precedence(self):
         return Precedence.VAR
+
+    def __str__(self):
+        return self.name
 
 
 @dataclass(frozen=True)
 class Const(Expr):
     value: bool
 
-    def __repr__(self) -> str:
-        return f"Const({self.value})"
-
-    def __str__(self) -> str:
-        return str(self.value)
-
-    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
+    def evaluate(self, assignment):
         return self.value
 
-    def variables(self) -> set[str]:
+    def variables(self):
         return set()
 
     @property
-    def precedence(self) -> Precedence:
+    def precedence(self):
         return Precedence.VAR
-    
+
+    def __str__(self):
+        return str(self.value)
+
 
 @dataclass(frozen=True)
-class Not(Expr):
-    operand: Expr
+class Not(UnaryExpr):
 
-    def __repr__(self) -> str:
-        return f"Not({self.operand!r})"
-
-    def __str__(self) -> str:
-        return f"¬{self.format(self.operand)}"
-
-    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
+    def evaluate(self, assignment):
         return not self.operand.evaluate(assignment)
 
-    def variables(self) -> set[str]:
+    def variables(self):
         return self.operand.variables()
 
-    def simplify(self) -> Expr:
+    def simplify(self):
         inner = self.operand.simplify()
-        if isinstance(inner, Not):
-            return inner.operand
-        return Not(inner)
+        return inner.operand if isinstance(inner, Not) else Not(inner)
 
     @property
-    def precedence(self) -> Precedence:
+    def precedence(self):
         return Precedence.NOT
+
+    def __str__(self):
+        return f"¬{self.format(self.operand)}"
 
 
 @dataclass(frozen=True)
-class And(Expr):
-    left: Expr
-    right: Expr
+class And(BinaryExpr):
 
-    def __repr__(self) -> str:
-        return f"And({self.left}, {self.right})"
-
-    def __str__(self) -> str:
-        return f"{self.format(self.left)} ∧ {self.format(self.right)}"
-
-    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
+    def evaluate(self, assignment):
         return self.left.evaluate(assignment) and self.right.evaluate(assignment)
 
-    def variables(self) -> set[str]:
+    def variables(self):
         return self.left.variables() | self.right.variables()
 
-    def simplify(self) -> Expr:
-        left = self.left.simplify()
-        right = self.right.simplify()
+    def simplify(self):
+        left, right = self.left.simplify(), self.right.simplify()
         return left if left == right else And(left, right)
 
     @property
-    def precedence(self) -> Precedence:
+    def precedence(self):
         return Precedence.AND
+
+    def __str__(self):
+        return f"{self.format(self.left)} ∧ {self.format(self.right)}"
 
 
 @dataclass(frozen=True)
-class Or(Expr):
-    left: Expr
-    right: Expr
+class Or(BinaryExpr):
 
-    def __repr__(self) -> str:
-        return f"Or({self.left}, {self.right})"
+    def evaluate(self, assignment):
+        return self.left.evaluate(assignment) and self.right.evaluate(assignment)
 
-    def __str__(self) -> str:
-        return f"{self.format(self.left)} ∨ {self.format(self.right)}"
-
-    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
-        return self.left.evaluate(assignment) or self.right.evaluate(assignment)
-
-    def variables(self) -> set[str]:
+    def variables(self):
         return self.left.variables() | self.right.variables()
 
-    def simplify(self) -> Expr:
-        left = self.left.simplify()
-        right = self.right.simplify()
+    def simplify(self):
+        left, right = self.left.simplify(), self.right.simplify()
         return left if left == right else Or(left, right)
 
     @property
-    def precedence(self) -> Precedence:
-        return Precedence.OR
+    def precedence(self):
+        return Precedence.AND
+
+    def __str__(self):
+        return f"{self.format(self.left)} ∨ {self.format(self.right)}"
 
 
 @dataclass(frozen=True)
-class Implies(Expr):
-    left: Expr
-    right: Expr
+class Implies(BinaryExpr):
 
-    def __repr__(self) -> str:
-        return f"Implies({self.left}, {self.right})"
-
-    def __str__(self) -> str:
-        return f"{self.format(self.left)} → {self.format(self.right)}"
-
-    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
+    def evaluate(self, assignment):
         return (not self.left.evaluate(assignment)) or self.right.evaluate(assignment)
 
-    def variables(self) -> set[str]:
+    def variables(self):
         return self.left.variables() | self.right.variables()
 
-    def simplify(self) -> Expr:
+    def simplify(self):
         return Or(Not(self.left), self.right).simplify()
 
     @property
-    def precedence(self) -> Precedence:
+    def precedence(self):
         return Precedence.IMPLIES
+
+    def __str__(self):
+        return f"{self.format(self.left)} → {self.format(self.right)}"
 
 
 @dataclass(frozen=True)
-class Biconditional(Expr):
-    left: Expr
-    right: Expr
+class Biconditional(BinaryExpr):
 
-    def __repr__(self) -> str:
-        return f"Biconditional({self.left}, {self.right})"
-
-    def __str__(self) -> str:
-        return f"{self.format(self.left)} ↔ {self.format(self.right)}"
-
-    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
+    def evaluate(self, assignment):
         return self.left.evaluate(assignment) == self.right.evaluate(assignment)
 
-    def variables(self) -> set[str]:
+    def variables(self):
         return self.left.variables() | self.right.variables()
 
-    def simplify(self) -> Expr:
-        return And(Implies(self.left, self.right), Implies(self.right, self.left)).simplify()
+    def simplify(self):
+        return And(
+            Implies(self.left, self.right),
+            Implies(self.right, self.left),
+        ).simplify()
 
     @property
-    def precedence(self) -> Precedence:
+    def precedence(self):
         return Precedence.BICONDITIONAL
+
+    def __str__(self):
+        return f"{self.format(self.left)} ↔ {self.format(self.right)}"
+
+    def __repr__(self):
+        return f"Biconditional({self.left!r}, {self.right!r})"
