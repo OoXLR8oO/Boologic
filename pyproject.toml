@@ -36,3 +36,9 @@ Repository = "https://github.com/OoXLR8oO/boologic"
 [tool.hatch.build.targets.wheel]
 packages = ["boologic"]
 
+[dependency-groups]
+dev = [
+    "hypothesis>=6.152.7",
+    "pre-commit>=4.6.0",
+]
+
