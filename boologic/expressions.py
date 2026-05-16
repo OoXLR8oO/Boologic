@@ -136,7 +136,7 @@ class And(BinaryExpr):
 class Or(BinaryExpr):
 
     def evaluate(self, assignment):
-        return self.left.evaluate(assignment) and self.right.evaluate(assignment)
+        return self.left.evaluate(assignment) or self.right.evaluate(assignment)
 
     def variables(self):
         return self.left.variables() | self.right.variables()
