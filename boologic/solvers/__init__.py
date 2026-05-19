@@ -1,4 +1,4 @@
-from boologic.expressions import Not, Expr
+from boologic.expressions import Expr, Not
 
 
 def literal_var(lit) -> Expr:
@@ -14,7 +14,8 @@ def simplify_clauses(clauses, var_name, value) -> list[list[Expr]]:
 
     for clause in clauses:
         new_clause = [
-            lit for lit in clause
+            lit
+            for lit in clause
             if literal_var(lit).name != var_name or literal_value(lit) == value
         ]
         # Clause satisfied

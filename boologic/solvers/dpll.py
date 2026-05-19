@@ -1,16 +1,19 @@
+from boologic.cnf import expr_to_clauses, reduce_cnf, to_cnf
 from boologic.expressions import And, Expr, Not
-from boologic.cnf import to_cnf, reduce_cnf, expr_to_clauses
+
 from . import (
-    literal_var, 
-    literal_value, 
-    find_unit_clause, 
-    simplify_clauses, 
-    find_pure_literal, 
-    choose_variable
-    )
+    choose_variable,
+    find_pure_literal,
+    find_unit_clause,
+    literal_value,
+    literal_var,
+    simplify_clauses,
+)
 
 
-def dpll(clauses: list[list[Expr]], assignment: dict[str, bool], all_vars: set[str] | None = None) -> dict[str, bool] | bool:
+def dpll(
+    clauses: list[list[Expr]], assignment: dict[str, bool], all_vars: set[str] | None = None
+) -> dict[str, bool] | bool:
     """
     DPLL SAT solver.
 
@@ -39,30 +42,18 @@ def dpll(clauses: list[list[Expr]], assignment: dict[str, bool], all_vars: set[s
     unit = find_unit_clause(clauses)
     if unit:
         var, value = literal_var(unit).name, literal_value(unit)
-        return dpll(
-            simplify_clauses(clauses, var, value),
-            assign(var, value),
-            all_vars
-        )
+        return dpll(simplify_clauses(clauses, var, value), assign(var, value), all_vars)
 
     # Pure literal elimination
     pure = find_pure_literal(clauses)
     if pure:
         var, value = pure
-        return dpll(
-            simplify_clauses(clauses, var, value),
-            assign(var, value),
-            all_vars
-        )
+        return dpll(simplify_clauses(clauses, var, value), assign(var, value), all_vars)
 
     # Branching
     var = choose_variable(clauses)
     for value in (True, False):
-        result = dpll(
-            simplify_clauses(clauses, var, value),
-            assign(var, value),
-            all_vars
-        )
+        result = dpll(simplify_clauses(clauses, var, value), assign(var, value), all_vars)
         if result:
             return result
     return False

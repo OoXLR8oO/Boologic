@@ -1,5 +1,5 @@
-from boologic.expressions import Var, Const, Not, And, Or
-from boologic.cnf import to_cnf, reduce_cnf
+from boologic.cnf import reduce_cnf, to_cnf
+from boologic.expressions import And, Const, Not, Or, Var
 
 
 def test_implication_chain(vars_):

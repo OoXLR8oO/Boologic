@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 
-from pydantic.dataclasses import dataclass
 from pydantic import ConfigDict
+from pydantic.dataclasses import dataclass
 
 from .enums import Precedence
 
@@ -12,13 +12,11 @@ class Expr(ABC):
     def evaluate(self, assignment: Mapping[str, bool]) -> bool: ...
 
     @abstractmethod
-    def variables(self) -> set[str]: 
-        ...
+    def variables(self) -> set[str]: ...
 
     @property
     @abstractmethod
-    def precedence(self) -> Precedence: 
-        ...
+    def precedence(self) -> Precedence: ...
 
     def simplify(self) -> Expr:
         return self
@@ -92,7 +90,6 @@ class Const(Expr):
 
 @dataclass(frozen=True)
 class Not(UnaryExpr):
-
     def evaluate(self, assignment):
         return not self.operand.evaluate(assignment)
 
@@ -113,7 +110,6 @@ class Not(UnaryExpr):
 
 @dataclass(frozen=True)
 class And(BinaryExpr):
-
     def evaluate(self, assignment):
         return self.left.evaluate(assignment) and self.right.evaluate(assignment)
 
@@ -134,7 +130,6 @@ class And(BinaryExpr):
 
 @dataclass(frozen=True)
 class Or(BinaryExpr):
-
     def evaluate(self, assignment):
         return self.left.evaluate(assignment) or self.right.evaluate(assignment)
 
@@ -155,7 +150,6 @@ class Or(BinaryExpr):
 
 @dataclass(frozen=True)
 class Implies(BinaryExpr):
-
     def evaluate(self, assignment):
         return (not self.left.evaluate(assignment)) or self.right.evaluate(assignment)
 
@@ -175,7 +169,6 @@ class Implies(BinaryExpr):
 
 @dataclass(frozen=True)
 class Biconditional(BinaryExpr):
-
     def evaluate(self, assignment):
         return self.left.evaluate(assignment) == self.right.evaluate(assignment)
 

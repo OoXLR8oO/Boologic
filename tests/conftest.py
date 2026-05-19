@@ -1,5 +1,6 @@
 import pytest
-from boologic.expressions import Var, Const
+
+from boologic.expressions import Const, Var
 
 
 @pytest.fixture

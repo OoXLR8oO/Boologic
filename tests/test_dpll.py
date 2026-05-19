@@ -1,11 +1,11 @@
-from boologic.expressions import Not, And, Or
+from boologic.expressions import And, Not, Or
 from boologic.solvers.dpll import (
-    solve,
-    is_satisfiable,
+    entails,
     is_contradiction,
+    is_satisfiable,
     is_tautology,
     model,
-    entails,
+    solve,
 )
 
 

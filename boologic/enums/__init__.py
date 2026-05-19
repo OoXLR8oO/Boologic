@@ -1,5 +1,6 @@
 from enum import IntEnum
 
+
 class Precedence(IntEnum):
     VAR = 6
     NOT = 5
