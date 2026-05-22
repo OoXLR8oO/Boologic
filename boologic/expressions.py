@@ -1,3 +1,5 @@
+from __future__ import annotations  # safe in py3.14, helps mypy a lot
+
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 
@@ -22,9 +24,9 @@ class Expr(ABC):
         return self
 
     def format(self, child: Expr) -> str:
-        return (
-            f"({child})" if child.precedence < self.precedence else str(child)
-        )
+        if child.precedence < self.precedence:
+            return f"({child})"
+        return str(child)
 
     # operators
     def __invert__(self) -> Expr:
@@ -58,17 +60,17 @@ class BinaryExpr(Expr):
 class Var(Expr):
     name: str
 
-    def evaluate(self, assignment):
+    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
         return assignment[self.name]
 
-    def variables(self):
+    def variables(self) -> set[str]:
         return {self.name}
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.VAR
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -76,123 +78,127 @@ class Var(Expr):
 class Const(Expr):
     value: bool
 
-    def evaluate(self, assignment):
+    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
         return self.value
 
-    def variables(self):
+    def variables(self) -> set[str]:
         return set()
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.VAR
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.value)
 
 
 @dataclass(frozen=True)
 class Not(UnaryExpr):
-    def evaluate(self, assignment):
+    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
         return not self.operand.evaluate(assignment)
 
-    def variables(self):
+    def variables(self) -> set[str]:
         return self.operand.variables()
 
-    def simplify(self):
+    def simplify(self) -> Expr:
         inner = self.operand.simplify()
-        return inner.operand if isinstance(inner, Not) else Not(inner)
+        if isinstance(inner, Not):
+            return inner.operand
+        return Not(inner)
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.NOT
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"¬{self.format(self.operand)}"
 
 
 @dataclass(frozen=True)
 class And(BinaryExpr):
-    def evaluate(self, assignment):
+    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
         return self.left.evaluate(assignment) and self.right.evaluate(
             assignment
         )
 
-    def variables(self):
+    def variables(self) -> set[str]:
         return self.left.variables() | self.right.variables()
 
-    def simplify(self):
-        left, right = self.left.simplify(), self.right.simplify()
+    def simplify(self) -> Expr:
+        left = self.left.simplify()
+        right = self.right.simplify()
         return left if left == right else And(left, right)
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.AND
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.format(self.left)} ∧ {self.format(self.right)}"
 
 
 @dataclass(frozen=True)
 class Or(BinaryExpr):
-    def evaluate(self, assignment):
+    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
         return self.left.evaluate(assignment) or self.right.evaluate(assignment)
 
-    def variables(self):
+    def variables(self) -> set[str]:
         return self.left.variables() | self.right.variables()
 
-    def simplify(self):
-        left, right = self.left.simplify(), self.right.simplify()
+    def simplify(self) -> Expr:
+        left = self.left.simplify()
+        right = self.right.simplify()
         return left if left == right else Or(left, right)
 
     @property
-    def precedence(self):
-        return Precedence.AND
+    def precedence(self) -> Precedence:
+        return Precedence.OR
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.format(self.left)} ∨ {self.format(self.right)}"
 
 
 @dataclass(frozen=True)
 class Implies(BinaryExpr):
-    def evaluate(self, assignment):
+    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
         return (not self.left.evaluate(assignment)) or self.right.evaluate(
             assignment
         )
 
-    def variables(self):
+    def variables(self) -> set[str]:
         return self.left.variables() | self.right.variables()
 
-    def simplify(self):
+    def simplify(self) -> Expr:
         return Or(Not(self.left), self.right).simplify()
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.IMPLIES
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.format(self.left)} → {self.format(self.right)}"
 
 
 @dataclass(frozen=True)
 class Biconditional(BinaryExpr):
-    def evaluate(self, assignment):
+    def evaluate(self, assignment: Mapping[str, bool]) -> bool:
         return self.left.evaluate(assignment) == self.right.evaluate(assignment)
 
-    def variables(self):
+    def variables(self) -> set[str]:
         return self.left.variables() | self.right.variables()
 
-    def simplify(self):
+    def simplify(self) -> Expr:
         return And(
             Implies(self.left, self.right),
             Implies(self.right, self.left),
         ).simplify()
 
     @property
-    def precedence(self):
+    def precedence(self) -> Precedence:
         return Precedence.BICONDITIONAL
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.format(self.left)} ↔ {self.format(self.right)}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Biconditional({self.left!r}, {self.right!r})"

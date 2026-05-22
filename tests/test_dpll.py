@@ -20,7 +20,7 @@ def test_direct_contradiction(four_vars):
     A, *_ = four_vars
     expr = And(A, Not(A))
 
-    assert solve(expr) is False
+    assert solve(expr) is None
     assert is_contradiction(expr)
 
 
@@ -43,7 +43,7 @@ def test_simple_disjunction(four_vars):
 def test_unit_propagation(four_vars):
     A, B, *_ = four_vars
 
-    expr = And(A, Or(Not(A), B))  # A → B
+    expr = And(A, Or(Not(A), B))
     assert model(expr) == {"A": True, "B": True}
 
 
@@ -101,8 +101,7 @@ def test_complex_satisfiable(vars_):
         ),
     )
 
-    m = model(expr)
-    assert m is not None
+    assert model(expr) is not None
 
 
 def test_complex_unsatisfiable(vars_):
@@ -119,7 +118,7 @@ def test_complex_unsatisfiable(vars_):
         ),
     )
 
-    assert solve(expr) is False
+    assert solve(expr) is None
     assert not is_satisfiable(expr)
     assert is_contradiction(expr)
 
@@ -138,7 +137,8 @@ def test_3sat_unsat(four_vars):
         ),
     )
 
-    assert solve(expr) is False
+    assert solve(expr) is None
+    assert is_contradiction(expr)
 
 
 def test_entailment(four_vars):

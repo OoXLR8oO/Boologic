@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from boologic.expressions import (
     And,
     Biconditional,
@@ -15,10 +17,13 @@ def to_cnf(expr: Expr) -> Expr:
     return simplify(distribute_or(push_negations(eliminate_implications(expr))))
 
 
-def flatten(expr: Expr, node_type) -> list[Expr]:
+def flatten(expr: Expr, node_type: type[Expr]) -> list[Expr]:
     """Flatten nested AND/OR expressions."""
     if isinstance(expr, node_type):
-        return flatten(expr.left, node_type) + flatten(expr.right, node_type)
+        left = getattr(expr, "left", None)
+        right = getattr(expr, "right", None)
+        if left is not None and right is not None:
+            return flatten(left, node_type) + flatten(right, node_type)
     return [expr]
 
 
@@ -37,12 +42,18 @@ def eliminate_implications(expr: Expr) -> Expr:
             return Or(eliminate_implications(l), eliminate_implications(r))
 
         case Implies(l, r):
-            return Or(Not(eliminate_implications(l)), eliminate_implications(r))
+            return Or(
+                Not(eliminate_implications(l)),
+                eliminate_implications(r),
+            )
 
         case Biconditional(l, r):
             A = eliminate_implications(l)
             B = eliminate_implications(r)
             return And(Or(Not(A), B), Or(A, Not(B)))
+
+        case _:
+            return expr
 
 
 def push_negations(expr: Expr) -> Expr:
@@ -71,6 +82,9 @@ def push_negations(expr: Expr) -> Expr:
         case Var() | Const():
             return expr
 
+        case _:
+            return expr
+
 
 def distribute_or(expr: Expr) -> Expr:
     if isinstance(expr, And):
@@ -92,6 +106,7 @@ def distribute_or(expr: Expr) -> Expr:
                 distribute_or(Or(left, right.right)),
             )
         return Or(left, right)
+
     return expr
 
 
@@ -165,38 +180,36 @@ def simplify(expr: Expr) -> Expr:
         if isinstance(inner, Not):
             return simplify(inner.operand)
         return Not(inner)
+
     return expr
 
 
 def reduce_cnf(expr: Expr) -> Expr:
-    """Reduce CNF using simple unit propagation."""
     clauses = [list(c) for c in expr_to_clauses(expr)]
     units: set[Expr] = set()
+
     while True:
-        # Step 1: find all unit clauses
         new_units = set()
         for clause in clauses:
             if len(clause) == 1:
                 new_units.add(clause[0])
 
-        # Stop if no new units
         if new_units.issubset(units):
             break
 
-        # Add new units
         for lit in new_units:
             neg = lit.operand if isinstance(lit, Not) else Not(lit)
             if neg in units:
                 return Const(False)
             units.add(lit)
 
-        # Step 2: simplify clauses
         new_clauses = []
         for clause in clauses:
             if any(lit in units for lit in clause):
                 if len(clause) == 1:
                     new_clauses.append(clause)
                 continue
+
             reduced = []
             for lit in clause:
                 neg = lit.operand if isinstance(lit, Not) else Not(lit)
@@ -204,35 +217,36 @@ def reduce_cnf(expr: Expr) -> Expr:
                     continue
                 reduced.append(lit)
 
-            # Empty clause → contradiction
             if not reduced:
                 return Const(False)
+
             new_clauses.append(reduced)
+
         clauses = new_clauses
+
     return clauses_to_expr(clauses)
 
 
 def expr_to_clauses(expr: Expr) -> list[list[Expr]]:
-    """Convert CNF expression tree to clause list."""
     if isinstance(expr, Const):
         if expr.value:
             return []
         return [[]]
-    clauses = []
+
+    clauses: list[list[Expr]] = []
     for part in flatten(expr, And):
         clauses.append(flatten(part, Or))
     return clauses
 
 
 def clauses_to_expr(clauses: list[list[Expr]]) -> Expr:
-    """Convert clause list back to Expr tree."""
     if not clauses:
         return Const(True)
 
     if any(len(clause) == 0 for clause in clauses):
         return Const(False)
 
-    def build_clause(clause) -> Expr:
+    def build_clause(clause: list[Expr]) -> Expr:
         result = clause[0]
         for lit in clause[1:]:
             result = Or(result, lit)
@@ -245,8 +259,8 @@ def clauses_to_expr(clauses: list[list[Expr]]) -> Expr:
 
 
 def pretty_print_cnf(expr: Expr, indent: int = 0) -> str:
-    """Print CNF with each clause on a new line."""
     pad = "  " * indent
+
     if isinstance(expr, And):
         left = pretty_print_cnf(expr.left, indent)
         right = pretty_print_cnf(expr.right, indent)
@@ -261,11 +275,11 @@ def pretty_print_cnf(expr: Expr, indent: int = 0) -> str:
 
     if isinstance(expr, Var):
         return expr.name
+
     return str(expr)
 
 
 def flatten_cnf(expr: Expr) -> str:
-    """Return CNF as a single-line string."""
     clauses = []
     for clause in flatten(expr, And):
         terms = flatten(clause, Or)

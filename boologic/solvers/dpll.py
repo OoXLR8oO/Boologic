@@ -15,84 +15,90 @@ def dpll(
     clauses: list[list[Expr]],
     assignment: dict[str, bool],
     all_vars: set[str] | None = None,
-) -> dict[str, bool] | bool:
-    """
-    DPLL SAT solver.
-
-    clauses: CNF clause list
-    assignment: partial variable assignment
-    all_vars: full set of variables in the problem
-    """
+) -> dict[str, bool] | None:
     if all_vars is None:
         all_vars = {
             literal_var(lit).name for clause in clauses for lit in clause
         }
 
-    # Success: all clauses satisfied
     if not clauses:
-        return assignment | {v: True for v in all_vars if v not in assignment}
+        return {
+            **assignment,
+            **{v: True for v in all_vars if v not in assignment},
+        }
 
-    # Failure: empty clause
     if [] in clauses:
-        return False
+        return None
 
-    # Helper to extend assignment
-    def assign(var: str, value: bool):
-        new_assignment = assignment.copy()
-        new_assignment[var] = value
-        return new_assignment
+    def assign(var: str, value: bool) -> dict[str, bool]:
+        return assignment | {var: value}
 
     # Unit propagation
     unit = find_unit_clause(clauses)
-    if unit:
-        var, value = literal_var(unit).name, literal_value(unit)
+    if unit is not None:
+        lit = literal_var(unit)
+        var = lit.name
+        value = literal_value(unit)
+
         return dpll(
-            simplify_clauses(clauses, var, value), assign(var, value), all_vars
+            simplify_clauses(clauses, var, value),
+            assign(var, value),
+            all_vars,
         )
 
     # Pure literal elimination
     pure = find_pure_literal(clauses)
-    if pure:
+    if pure is not None:
         var, value = pure
         return dpll(
-            simplify_clauses(clauses, var, value), assign(var, value), all_vars
+            simplify_clauses(clauses, var, value),
+            assign(var, value),
+            all_vars,
         )
 
     # Branching
-    var = choose_variable(clauses)
+    var_opt = choose_variable(clauses)
+    if var_opt is None:
+        return None
+
+    chosen_var = var_opt
+
     for value in (True, False):
         result = dpll(
-            simplify_clauses(clauses, var, value), assign(var, value), all_vars
+            simplify_clauses(clauses, chosen_var, value),
+            assign(chosen_var, value),
+            all_vars,
         )
-        if result:
+        if result is not None:
             return result
-    return False
+
+    return None
 
 
-def solve(expr: Expr) -> dict[str, bool] | bool:
+def solve(expr: Expr) -> dict[str, bool] | None:
     cnf = to_cnf(expr)
     clauses = expr_to_clauses(reduce_cnf(cnf))
+
     all_vars = {literal_var(lit).name for clause in clauses for lit in clause}
+
     return dpll(clauses, {}, all_vars)
 
 
 def model(expr: Expr) -> dict[str, bool] | None:
-    """Return a model if satisfiable, None otherwise."""
-    result = solve(expr)
-    return result if result else None
+    return solve(expr)
 
 
 def is_satisfiable(expr: Expr) -> bool:
-    return solve(expr) is not False
+    return solve(expr) is not None
 
 
 def is_tautology(expr: Expr) -> bool:
-    return solve(Not(expr)) is False
+    return solve(Not(expr)) is None
 
 
 def is_contradiction(expr: Expr) -> bool:
-    return solve(expr) is False
+    return solve(expr) is None
 
 
 def entails(kb: Expr, query: Expr) -> bool:
-    return solve(And(kb, Not(query))) is False
+    return solve(And(kb, Not(query))) is None
