@@ -19,7 +19,10 @@ def simplify_clauses(clauses, var_name, value) -> list[list[Expr]]:
             if literal_var(lit).name != var_name or literal_value(lit) == value
         ]
         # Clause satisfied
-        if any(literal_var(lit).name == var_name and literal_value(lit) == value for lit in clause):
+        if any(
+            literal_var(lit).name == var_name and literal_value(lit) == value
+            for lit in clause
+        ):
             continue
         # Empty clause → conflict
         if not new_clause:

@@ -12,7 +12,9 @@ from . import (
 
 
 def dpll(
-    clauses: list[list[Expr]], assignment: dict[str, bool], all_vars: set[str] | None = None
+    clauses: list[list[Expr]],
+    assignment: dict[str, bool],
+    all_vars: set[str] | None = None,
 ) -> dict[str, bool] | bool:
     """
     DPLL SAT solver.
@@ -22,7 +24,9 @@ def dpll(
     all_vars: full set of variables in the problem
     """
     if all_vars is None:
-        all_vars = {literal_var(lit).name for clause in clauses for lit in clause}
+        all_vars = {
+            literal_var(lit).name for clause in clauses for lit in clause
+        }
 
     # Success: all clauses satisfied
     if not clauses:
@@ -42,18 +46,24 @@ def dpll(
     unit = find_unit_clause(clauses)
     if unit:
         var, value = literal_var(unit).name, literal_value(unit)
-        return dpll(simplify_clauses(clauses, var, value), assign(var, value), all_vars)
+        return dpll(
+            simplify_clauses(clauses, var, value), assign(var, value), all_vars
+        )
 
     # Pure literal elimination
     pure = find_pure_literal(clauses)
     if pure:
         var, value = pure
-        return dpll(simplify_clauses(clauses, var, value), assign(var, value), all_vars)
+        return dpll(
+            simplify_clauses(clauses, var, value), assign(var, value), all_vars
+        )
 
     # Branching
     var = choose_variable(clauses)
     for value in (True, False):
-        result = dpll(simplify_clauses(clauses, var, value), assign(var, value), all_vars)
+        result = dpll(
+            simplify_clauses(clauses, var, value), assign(var, value), all_vars
+        )
         if result:
             return result
     return False

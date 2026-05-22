@@ -22,7 +22,9 @@ class Expr(ABC):
         return self
 
     def format(self, child: Expr) -> str:
-        return f"({child})" if child.precedence < self.precedence else str(child)
+        return (
+            f"({child})" if child.precedence < self.precedence else str(child)
+        )
 
     # operators
     def __invert__(self) -> Expr:
@@ -111,7 +113,9 @@ class Not(UnaryExpr):
 @dataclass(frozen=True)
 class And(BinaryExpr):
     def evaluate(self, assignment):
-        return self.left.evaluate(assignment) and self.right.evaluate(assignment)
+        return self.left.evaluate(assignment) and self.right.evaluate(
+            assignment
+        )
 
     def variables(self):
         return self.left.variables() | self.right.variables()
@@ -151,7 +155,9 @@ class Or(BinaryExpr):
 @dataclass(frozen=True)
 class Implies(BinaryExpr):
     def evaluate(self, assignment):
-        return (not self.left.evaluate(assignment)) or self.right.evaluate(assignment)
+        return (not self.left.evaluate(assignment)) or self.right.evaluate(
+            assignment
+        )
 
     def variables(self):
         return self.left.variables() | self.right.variables()

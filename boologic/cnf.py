@@ -1,4 +1,13 @@
-from boologic.expressions import And, Biconditional, Const, Expr, Implies, Not, Or, Var
+from boologic.expressions import (
+    And,
+    Biconditional,
+    Const,
+    Expr,
+    Implies,
+    Not,
+    Or,
+    Var,
+)
 
 
 def to_cnf(expr: Expr) -> Expr:

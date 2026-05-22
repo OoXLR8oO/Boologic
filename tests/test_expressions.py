@@ -1,4 +1,12 @@
-from boologic.expressions import And, Biconditional, Const, Implies, Not, Or, Var
+from boologic.expressions import (
+    And,
+    Biconditional,
+    Const,
+    Implies,
+    Not,
+    Or,
+    Var,
+)
 
 
 def test_var_evaluate():
