@@ -17,3 +17,4 @@ decorators/
 # Files
 main.py
 cmd.txt
+ci-pipeline.txt

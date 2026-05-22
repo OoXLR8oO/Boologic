@@ -1,11 +1,11 @@
-name: Tests
+name: CI
 
 on:
   push:
   pull_request:
 
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,5 +32,11 @@ jobs:
       - name: Ruff lint check
         run: uv run ruff check .
 
+      - name: Type check
+        run: uv run mypy boologic
+
       - name: Run tests
-        run: uv run pytest
+        run: uv run pytest --cov=boologic --cov-report=term-missing
+
+      - name: Build package
+        run: uv run python -m build

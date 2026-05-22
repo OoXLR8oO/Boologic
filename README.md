@@ -1,5 +1,7 @@
 # Boologic
 
+![Tests](https://github.com/<user>/<repo>/actions/workflows/tests.yml/badge.svg)
+
 A lightweight Python library for working with **boolean propositional logic** expressions.
 
 Boologic allows you to construct logical expressions either:
@@ -30,6 +32,10 @@ Expressions are rendered using proper logical symbols:
 
 ```bash
 pip install boologic
+```
+
+```bash
+uv add boologic
 ```
 
 ---
