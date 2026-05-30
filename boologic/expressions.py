@@ -86,7 +86,7 @@ class Const(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.VAR
+        return Precedence.CONST
 
     def __str__(self) -> str:
         return str(self.value)
@@ -102,8 +102,13 @@ class Not(UnaryExpr):
 
     def simplify(self) -> Expr:
         inner = self.operand.simplify()
+
         if isinstance(inner, Not):
             return inner.operand
+
+        if isinstance(inner, Const):
+            return Const(not inner.value)
+
         return Not(inner)
 
     @property
@@ -127,7 +132,24 @@ class And(BinaryExpr):
     def simplify(self) -> Expr:
         left = self.left.simplify()
         right = self.right.simplify()
-        return left if left == right else And(left, right)
+
+        if isinstance(left, Const) and isinstance(right, Const):
+            return Const(left.value and right.value)
+
+        if isinstance(left, Const):
+            if left.value is True:
+                return right
+            return Const(False)
+
+        if isinstance(right, Const):
+            if right.value is True:
+                return left
+            return Const(False)
+
+        if left == right:
+            return left
+
+        return And(left, right)
 
     @property
     def precedence(self) -> Precedence:
@@ -148,7 +170,21 @@ class Or(BinaryExpr):
     def simplify(self) -> Expr:
         left = self.left.simplify()
         right = self.right.simplify()
-        return left if left == right else Or(left, right)
+
+        if isinstance(left, Const):
+            if left.value is True:
+                return Const(True)
+            return right
+
+        if isinstance(right, Const):
+            if right.value is True:
+                return Const(True)
+            return left
+
+        if left == right:
+            return left
+
+        return Or(left, right)
 
     @property
     def precedence(self) -> Precedence:

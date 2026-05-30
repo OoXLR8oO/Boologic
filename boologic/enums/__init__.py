@@ -2,6 +2,7 @@ from enum import IntEnum
 
 
 class Precedence(IntEnum):
+    CONST = 7
     VAR = 6
     NOT = 5
     AND = 4
