@@ -20,6 +20,14 @@ jobs:
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
       - name: Add uv to PATH
         run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
@@ -36,7 +44,7 @@ jobs:
         run: uv run mypy boologic
 
       - name: Run tests
-        run: uv run pytest --cov=boologic --cov-report=term-missing
+        run: uv run pytest
 
       - name: Build package
         run: uv run python -m build
