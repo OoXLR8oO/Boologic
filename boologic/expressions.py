@@ -46,12 +46,12 @@ class Expr(ABC):
 
 
 @dataclass(frozen=True, config=ConfigDict(arbitrary_types_allowed=True))
-class UnaryExpr(Expr):
+class UnaryExpr(Expr, ABC):
     operand: Expr
 
 
 @dataclass(frozen=True, config=ConfigDict(arbitrary_types_allowed=True))
-class BinaryExpr(Expr):
+class BinaryExpr(Expr, ABC):
     left: Expr
     right: Expr
 
@@ -235,6 +235,3 @@ class Biconditional(BinaryExpr):
 
     def __str__(self) -> str:
         return f"{self.format(self.left)} ↔ {self.format(self.right)}"
-
-    def __repr__(self) -> str:
-        return f"Biconditional({self.left!r}, {self.right!r})"

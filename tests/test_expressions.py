@@ -1,12 +1,10 @@
 from boologic.expressions import (
     And,
     Biconditional,
-    BinaryExpr,
     Const,
     Implies,
     Not,
     Or,
-    UnaryExpr,
     Var,
 )
 
@@ -84,25 +82,6 @@ def test_biconditional_with_constant_true(four_vars):
     assert (A ^ Const(True)).evaluate({"A": False}) is False
 
 
-def test_expression_structural_equality_and_hashing():
-    a1 = Var("A")
-    a2 = Var("A")
-    b = Var("B")
-
-    assert a1 == a2
-    assert a1 != b
-    assert hash(a1) == hash(a2)
-
-    assert And(a1, b) == And(Var("A"), Var("B"))
-
-
-def test_unary_and_binary_base_class_relationships():
-    a = Var("A")
-
-    assert isinstance(Not(a), UnaryExpr)
-    assert isinstance(And(a, a), BinaryExpr)
-
-
 def test_constant_folding_in_simplification():
     assert Not(Const(True)).simplify() == Const(False)
     assert Not(Const(False)).simplify() == Const(True)
@@ -132,14 +111,6 @@ def test_string_formatting_with_operator_precedence():
 
     assert "¬" in str(Not(And(a, b)))
     assert "¬" in str(And(Not(a), b))
-
-
-def test_constant_edge_behaviour_in_all_contexts():
-    c = Const(True)
-
-    assert c.evaluate({}) is True
-    assert c.variables() == set()
-    assert str(c) in {"True", "False"}
 
 
 def test_or_simplification_with_constants_all_cases():

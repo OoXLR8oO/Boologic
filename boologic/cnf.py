@@ -52,9 +52,6 @@ def eliminate_implications(expr: Expr) -> Expr:
             B = eliminate_implications(r)
             return And(Or(Not(A), B), Or(A, Not(B)))
 
-        case _:
-            return expr
-
 
 def push_negations(expr: Expr) -> Expr:
     match expr:
@@ -80,9 +77,6 @@ def push_negations(expr: Expr) -> Expr:
             return Or(push_negations(l), push_negations(r))
 
         case Var() | Const():
-            return expr
-
-        case _:
             return expr
 
 
@@ -256,35 +250,3 @@ def clauses_to_expr(clauses: list[list[Expr]]) -> Expr:
     for clause in clauses[1:]:
         result = And(result, build_clause(clause))
     return result
-
-
-def pretty_print_cnf(expr: Expr, indent: int = 0) -> str:
-    pad = "  " * indent
-
-    if isinstance(expr, And):
-        left = pretty_print_cnf(expr.left, indent)
-        right = pretty_print_cnf(expr.right, indent)
-        return f"{left}\n{pad}∧ {right}"
-
-    if isinstance(expr, Or):
-        terms = [str(e) for e in flatten(expr, Or)]
-        return "(" + " ∨ ".join(terms) + ")"
-
-    if isinstance(expr, Not):
-        return f"¬{expr.operand}"
-
-    if isinstance(expr, Var):
-        return expr.name
-
-    return str(expr)
-
-
-def flatten_cnf(expr: Expr) -> str:
-    clauses = []
-    for clause in flatten(expr, And):
-        terms = flatten(clause, Or)
-        if len(terms) == 1:
-            clauses.append(str(terms[0]))
-        else:
-            clauses.append("(" + " ∨ ".join(str(t) for t in terms) + ")")
-    return " ∧ ".join(clauses)
