@@ -52,6 +52,9 @@ def eliminate_implications(expr: Expr) -> Expr:
             B = eliminate_implications(r)
             return And(Or(Not(A), B), Or(A, Not(B)))
 
+        case _:
+            return expr
+
 
 def push_negations(expr: Expr) -> Expr:
     match expr:
@@ -77,6 +80,9 @@ def push_negations(expr: Expr) -> Expr:
             return Or(push_negations(l), push_negations(r))
 
         case Var() | Const():
+            return expr
+
+        case _:
             return expr
 
 
