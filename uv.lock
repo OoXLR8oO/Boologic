@@ -90,6 +90,13 @@ build = [
     { name = "build" },
     { name = "twine" },
 ]
+ci = [
+    { name = "hypothesis" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
 dev = [
     { name = "mypy" },
     { name = "pre-commit" },
@@ -112,6 +119,13 @@ requires-dist = [{ name = "pydantic", specifier = ">=2.13.4" }]
 build = [
     { name = "build", specifier = ">=1.5.0" },
     { name = "twine", specifier = ">=6.2.0" },
+]
+ci = [
+    { name = "hypothesis", specifier = ">=6.152.7" },
+    { name = "mypy", specifier = ">=2.1.0" },
+    { name = "pytest", specifier = ">=9.0.3" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "ruff", specifier = ">=0.15.5" },
 ]
 dev = [
     { name = "mypy", specifier = ">=2.1.0" },

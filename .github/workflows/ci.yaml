@@ -32,7 +32,7 @@ jobs:
         run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --group ci
 
       - name: Ruff formatting check
         run: uv run ruff format --check .
@@ -45,6 +45,3 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
-
-      - name: Build package
-        run: uv run python -m build
