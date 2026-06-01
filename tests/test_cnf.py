@@ -2,71 +2,70 @@ from boologic.cnf import (
     reduce_cnf,
     to_cnf,
 )
-from boologic.expressions import And, Const, Not, Or, Var
+from boologic.expressions import And, Const, Not, Or
 
 
-def test_implication_and_biconditional_rules(vars_):
-    a, b, c, *_ = vars_
+def test_implication_and_biconditional_rules(vars):
+    A, B, C, *_ = vars
 
-    expr1 = (a >> b) >> c
-    assert to_cnf(expr1) == And(Or(a, c), Or(Not(b), c))
-    assert reduce_cnf(to_cnf(expr1)) == And(Or(a, c), Or(Not(b), c))
+    expr1 = (A >> B) >> C
+    assert to_cnf(expr1) == And(Or(A, C), Or(Not(B), C))
+    assert reduce_cnf(to_cnf(expr1)) == And(Or(A, C), Or(Not(B), C))
 
-    expr2 = a ^ b
-    assert to_cnf(expr2) == And(Or(Not(a), b), Or(a, Not(b)))
-
-
-def test_demorgan_laws(vars_):
-    a, b, *_ = vars_
-
-    assert to_cnf(~(a & b)) == Or(Not(a), Not(b))
-    assert to_cnf(~(a | b)) == And(Not(a), Not(b))
-    assert reduce_cnf(to_cnf(~(a | b))) == And(Not(a), Not(b))
+    expr2 = A ^ B
+    assert to_cnf(expr2) == And(Or(Not(A), B), Or(A, Not(B)))
 
 
-def test_unit_propagation(vars_):
-    a, b, *_ = vars_
+def test_demorgan_laws(vars):
+    A, B, *_ = vars
 
-    expr = a & (a >> b)
+    assert to_cnf(~(A & B)) == Or(Not(A), Not(B))
+    assert to_cnf(~(A | B)) == And(Not(A), Not(B))
+    assert reduce_cnf(to_cnf(~(A | B))) == And(Not(A), Not(B))
+
+
+def test_unit_propagation(vars):
+    A, B, *_ = vars
+
+    expr = A & (A >> B)
     cnf = to_cnf(expr)
 
-    assert cnf == And(a, Or(Not(a), b))
-    assert reduce_cnf(cnf) == And(a, b)
+    assert cnf == And(A, Or(Not(A), B))
+    assert reduce_cnf(cnf) == And(A, B)
 
 
-def test_constants_behaviour(vars_):
-    a, *_ = vars_
-    t, f = Const(True), Const(False)
+def test_constants_behaviour(vars):
+    A, *_ = vars
 
-    assert reduce_cnf(to_cnf(t & a)) == a
-    assert reduce_cnf(to_cnf(f & a)) == Const(False)
+    assert reduce_cnf(to_cnf(Const(True) & A)) == A
+    assert reduce_cnf(to_cnf(Const(False) & A)) == Const(False)
 
-    assert reduce_cnf(to_cnf((a | t) & a)) == a
-    assert reduce_cnf(to_cnf((a | f) & a)) == a
-
-
-def test_tautology_and_contradiction_rules(vars_):
-    a, b, *_ = vars_
-
-    assert reduce_cnf(to_cnf(a | ~a)) == Const(True)
-    assert reduce_cnf(to_cnf(a & ~a)) == Const(False)
-
-    assert reduce_cnf(to_cnf((a | ~a) & (b | ~b))) == Const(True)
-    assert reduce_cnf(to_cnf((a & ~a) & (b | ~b))) == Const(False)
+    assert reduce_cnf(to_cnf((A | Const(True)) & A)) == A
+    assert reduce_cnf(to_cnf((A | Const(False)) & A)) == A
 
 
-def test_complex_cnf_reduction(vars_):
-    a, b, c, d, *_ = vars_
+def test_tautology_and_contradiction_rules(vars):
+    A, B, *_ = vars
 
-    expr = (a ^ (c >> ~d)) & b & (b >> a)
+    assert reduce_cnf(to_cnf(A | ~A)) == Const(True)
+    assert reduce_cnf(to_cnf(A & ~A)) == Const(False)
+
+    assert reduce_cnf(to_cnf((A | ~A) & (B | ~B))) == Const(True)
+    assert reduce_cnf(to_cnf((A & ~A) & (B | ~B))) == Const(False)
+
+
+def test_complex_cnf_reduction(vars):
+    A, B, C, D, *_ = vars
+
+    expr = (A ^ (C >> ~D)) & B & (B >> A)
 
     reduced = reduce_cnf(to_cnf(expr))
 
-    assert reduced == And(And(Or(Not(c), Not(d)), b), a)
+    assert reduced == And(And(Or(Not(C), Not(D)), B), A)
 
 
-def test_identity_cases():
-    a = Var("A")
+def test_identity_cases(vars):
+    A, *_ = vars
 
     assert to_cnf(Const(True)) == Const(True)
     assert reduce_cnf(to_cnf(Const(True))) == Const(True)
@@ -74,30 +73,29 @@ def test_identity_cases():
     assert to_cnf(Const(False)) == Const(False)
     assert reduce_cnf(to_cnf(Const(False))) == Const(False)
 
-    assert to_cnf(a) == a
-    assert reduce_cnf(to_cnf(a)) == a
+    assert to_cnf(A) == A
+    assert reduce_cnf(to_cnf(A)) == A
 
-    assert to_cnf(~a) == Not(a)
-    assert reduce_cnf(to_cnf(~a)) == Not(a)
-
-
-def test_or_and_edge_cases():
-    a = Var("A")
-
-    assert reduce_cnf(to_cnf(a | Const(True))) == Const(True)
-    assert reduce_cnf(to_cnf(Const(True) | a)) == Const(True)
-
-    assert reduce_cnf(to_cnf(a | Const(False))) == a
-    assert reduce_cnf(to_cnf(Const(False) | a)) == a
-
-    assert reduce_cnf(to_cnf(a & Const(True))) == a
-    assert reduce_cnf(to_cnf(Const(True) & a)) == a
-
-    assert reduce_cnf(to_cnf(a & Const(False))) == Const(False)
+    assert to_cnf(~A) == Not(A)
+    assert reduce_cnf(to_cnf(~A)) == Not(A)
 
 
-def test_nested_structural_cases():
-    a = Var("A")
-    b = Var("B")
+def test_or_and_edge_cases(vars):
+    A, *_ = vars
 
-    assert reduce_cnf(to_cnf(a | (~a & b))) == Or(a, b)
+    assert reduce_cnf(to_cnf(A | Const(True))) == Const(True)
+    assert reduce_cnf(to_cnf(Const(True) | A)) == Const(True)
+
+    assert reduce_cnf(to_cnf(A | Const(False))) == A
+    assert reduce_cnf(to_cnf(Const(False) | A)) == A
+
+    assert reduce_cnf(to_cnf(A & Const(True))) == A
+    assert reduce_cnf(to_cnf(Const(True) & A)) == A
+
+    assert reduce_cnf(to_cnf(A & Const(False))) == Const(False)
+
+
+def test_nested_structural_cases(vars):
+    A, B, *_ = vars
+
+    assert reduce_cnf(to_cnf(A | (~A & B))) == Or(A, B)

@@ -9,46 +9,46 @@ from boologic.solvers.dpll import (
 )
 
 
-def test_single_variable_sat(four_vars):
-    A, *_ = four_vars
+def test_single_variable_sat(vars):
+    A, *_ = vars
 
     assert solve(A) == {"A": True}
     assert is_satisfiable(A)
 
 
-def test_direct_contradiction(four_vars):
-    A, *_ = four_vars
+def test_direct_contradiction(vars):
+    A, *_ = vars
     expr = And(A, Not(A))
 
     assert solve(expr) is None
     assert is_contradiction(expr)
 
 
-def test_tautology_clause(four_vars):
-    A, *_ = four_vars
+def test_tautology_clause(vars):
+    A, *_ = vars
     expr = Or(A, Not(A))
 
     assert is_tautology(expr)
     assert is_satisfiable(expr)
 
 
-def test_simple_disjunction(four_vars):
-    A, B, *_ = four_vars
+def test_simple_disjunction(vars):
+    A, B, *_ = vars
 
     m = model(Or(A, B))
     assert m is not None
     assert m["A"] or m["B"]
 
 
-def test_unit_propagation(four_vars):
-    A, B, *_ = four_vars
+def test_unit_propagation(vars):
+    A, B, *_ = vars
 
     expr = And(A, Or(Not(A), B))
     assert model(expr) == {"A": True, "B": True}
 
 
-def test_xor_constraint(four_vars):
-    A, B, *_ = four_vars
+def test_xor_constraint(vars):
+    A, B, *_ = vars
 
     expr = And(Or(A, B), Or(Not(A), Not(B)))
     m = model(expr)
@@ -57,8 +57,8 @@ def test_xor_constraint(four_vars):
     assert m["A"] != m["B"]
 
 
-def test_implication_chain(four_vars):
-    A, B, C, *_ = four_vars
+def test_implication_chain(vars):
+    A, B, C, *_ = vars
 
     expr = And(
         A,
@@ -75,8 +75,8 @@ def test_implication_chain(four_vars):
     assert m["C"]
 
 
-def test_pure_literal_elimination(four_vars):
-    A, B, C, *_ = four_vars
+def test_pure_literal_elimination(vars):
+    A, B, C, *_ = vars
 
     expr = And(
         Or(A, B),
@@ -87,16 +87,16 @@ def test_pure_literal_elimination(four_vars):
     assert m["A"] is True
 
 
-def test_complex_satisfiable(vars_):
-    a, b, c, d, *_ = vars_
+def test_complex_satisfiable(vars):
+    A, B, C, D, *_ = vars
 
     expr = And(
-        Or(a, Or(b, c)),
+        Or(A, Or(B, C)),
         And(
-            Or(Not(a), b),
+            Or(Not(A), B),
             And(
-                Or(Not(b), c),
-                Or(Not(c), d),
+                Or(Not(B), C),
+                Or(Not(C), D),
             ),
         ),
     )
@@ -104,16 +104,16 @@ def test_complex_satisfiable(vars_):
     assert model(expr) is not None
 
 
-def test_complex_unsatisfiable(vars_):
-    a, b, c, d, *_ = vars_
+def test_complex_unsatisfiable(vars):
+    A, B, C, D, *_ = vars
 
     expr = And(
-        Or(a, b),
+        Or(A, B),
         And(
-            Or(Not(a), c),
+            Or(Not(A), C),
             And(
-                Or(Not(b), c),
-                Not(c),
+                Or(Not(B), C),
+                Not(C),
             ),
         ),
     )
@@ -123,8 +123,8 @@ def test_complex_unsatisfiable(vars_):
     assert is_contradiction(expr)
 
 
-def test_3sat_unsat(four_vars):
-    A, B, *_ = four_vars
+def test_3sat_unsat(vars):
+    A, B, *_ = vars
 
     expr = And(
         Or(A, B),
@@ -141,8 +141,8 @@ def test_3sat_unsat(four_vars):
     assert is_contradiction(expr)
 
 
-def test_entailment(four_vars):
-    A, B, *_ = four_vars
+def test_entailment(vars):
+    A, B, *_ = vars
 
     kb = And(A, Or(A, B))
     assert not entails(kb, B)
