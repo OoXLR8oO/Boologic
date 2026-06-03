@@ -47,7 +47,7 @@ uv add boologic
 Use the `Var` class to create propositional variables:
 
 ```python
-from boologic import Var
+from boologic.expressions import Var
 
 A = Var("A")
 B = Var("B")
@@ -73,7 +73,7 @@ Output:
 ### Explicit Class Syntax
 
 ```python
-from boologic import And, Implies, Not
+from boologic.expressions import And, Implies, Not
 
 expr = Implies(And(A, B), Not(A))
 print(expr)
@@ -90,7 +90,7 @@ Output:
 Both styles can be combined safely:
 
 ```python
-from boologic import Implies
+from boologic.expressions import Implies
 
 expr = Implies(A & B, ~A)
 ```
@@ -117,7 +117,7 @@ Boologic uses its own `Const` class instead of Python's built-in
 ### Example
 
 ```python
-from boologic import Const
+from boologic.expressions import Const
 
 expr = Const(True) | A
 ```
@@ -247,7 +247,7 @@ For best readability:
 ## Full Example
 
 ```python
-from boologic import Const, Var
+from boologic.expressions import Const, Var
 
 A = Var("A")
 B = Var("B")
